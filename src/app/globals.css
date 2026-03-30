@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --color-dreamy-purple: #6b5ce7;
+  --color-dreamy-lavender: #b392f0;
+  --color-dreamy-mist: #e8dff5;
+  --color-dreamy-dark: #1a1028;
+  --color-dreamy-midnight: #0d0a1a;
+  --color-dreamy-gold: #f0d9a0;
+  --color-dreamy-rose: #e8a0b4;
+  --color-soft-white: #fef9f9;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-dreamy-midnight);
+  color: var(--color-soft-white);
+  font-family: 'Georgia', 'Noto Serif SC', serif;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-dreamy-lavender);
+  color: var(--color-dreamy-dark);
+}
+
+/* Dreamy scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-dreamy-midnight);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-dreamy-purple);
+  border-radius: 3px;
+}
