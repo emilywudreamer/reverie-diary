@@ -40,15 +40,15 @@ function DreamDust() {
       particles.push({
         x: Math.random() * w,
         y: Math.random() * h,
-        size: isFirefly ? Math.random() * 3 + 2.5 : Math.random() * 2.5 + 0.6,
-        baseOpacity: isFirefly ? Math.random() * 0.3 + 0.25 : Math.random() * 0.35 + 0.08,
+        size: isFirefly ? Math.random() * 3.5 + 3 : Math.random() * 2.8 + 0.8,
+        baseOpacity: isFirefly ? Math.random() * 0.35 + 0.3 : Math.random() * 0.4 + 0.12,
         opacity: 0,
         vx: (Math.random() - 0.5) * (isFirefly ? 0.08 : 0.15),
         vy: (Math.random() - 0.5) * 0.1 - 0.05,
         phase: Math.random() * Math.PI * 2,
         phaseSpeed: isFirefly ? Math.random() * 0.004 + 0.001 : Math.random() * 0.008 + 0.003,
         hue: isFirefly ? 45 : hue,           // fireflies are golden
-        lightness: isFirefly ? 88 : Math.random() * 20 + 70,
+        lightness: isFirefly ? 80 : Math.random() * 15 + 60,  // 60-75% — visible against cream
         drift: Math.random() * Math.PI * 2,
       });
     }
@@ -126,8 +126,8 @@ function DreamDust() {
         // Draw — soft radial glow
         ctx.beginPath();
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2.5);
-        gradient.addColorStop(0, `oklch(${p.lightness}% 0.04 ${p.hue} / ${p.opacity})`);
-        gradient.addColorStop(1, `oklch(${p.lightness}% 0.04 ${p.hue} / 0)`);
+        gradient.addColorStop(0, `oklch(${p.lightness}% 0.08 ${p.hue} / ${p.opacity})`);
+        gradient.addColorStop(1, `oklch(${p.lightness}% 0.08 ${p.hue} / 0)`);
         ctx.fillStyle = gradient;
         ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
         ctx.fill();
