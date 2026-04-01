@@ -1,7 +1,159 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect, useCallback } from "react";
+
+/* ─── Dream Dust — organic canvas particle system ─── */
+function DreamDust() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number>(0);
+  const particlesRef = useRef<Particle[]>([]);
+  const mouseRef = useRef({ x: -1, y: -1 });
+
+  interface Particle {
+    x: number;
+    y: number;
+    size: number;
+    baseOpacity: number;
+    opacity: number;
+    vx: number;
+    vy: number;
+    phase: number;       // for breathing/pulsing
+    phaseSpeed: number;
+    hue: number;         // warm hues: rose, gold, cream
+    lightness: number;
+    drift: number;       // perlin-like horizontal drift
+  }
+
+  const initParticles = useCallback((w: number, h: number) => {
+    const count = Math.min(Math.floor((w * h) / 2800), 450);
+    const particles: Particle[] = [];
+
+    for (let i = 0; i < count; i++) {
+      // Warm palette: rose(10), gold(45), warm white(60)
+      const hueChoices = [10, 25, 40, 45, 55, 60];
+      const hue = hueChoices[Math.floor(Math.random() * hueChoices.length)];
+
+      // ~5% are "fireflies" — larger, brighter, slower pulse
+      const isFirefly = Math.random() < 0.05;
+
+      particles.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        size: isFirefly ? Math.random() * 3 + 2.5 : Math.random() * 2.5 + 0.6,
+        baseOpacity: isFirefly ? Math.random() * 0.3 + 0.25 : Math.random() * 0.35 + 0.08,
+        opacity: 0,
+        vx: (Math.random() - 0.5) * (isFirefly ? 0.08 : 0.15),
+        vy: (Math.random() - 0.5) * 0.1 - 0.05,
+        phase: Math.random() * Math.PI * 2,
+        phaseSpeed: isFirefly ? Math.random() * 0.004 + 0.001 : Math.random() * 0.008 + 0.003,
+        hue: isFirefly ? 45 : hue,           // fireflies are golden
+        lightness: isFirefly ? 88 : Math.random() * 20 + 70,
+        drift: Math.random() * Math.PI * 2,
+      });
+    }
+    return particles;
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
+
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.scale(dpr, dpr);
+      particlesRef.current = initParticles(window.innerWidth, window.innerHeight);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    const onMouse = (e: MouseEvent) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("mousemove", onMouse);
+
+    // Check reduced motion
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let time = 0;
+    const draw = () => {
+      if (prefersReduced) return;
+      time += 1;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+
+      for (const p of particlesRef.current) {
+        // Organic drift
+        p.drift += 0.002;
+        p.x += p.vx + Math.sin(p.drift) * 0.08;
+        p.y += p.vy + Math.cos(p.drift * 0.7) * 0.04;
+
+        // Breathing opacity
+        p.phase += p.phaseSpeed;
+        p.opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(p.phase));
+
+        // Mouse proximity — gentle push away
+        if (mx >= 0) {
+          const dx = p.x - mx;
+          const dy = p.y - my;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120) {
+            const force = (120 - dist) / 120 * 0.3;
+            p.x += (dx / dist) * force;
+            p.y += (dy / dist) * force;
+            // Brighten near cursor
+            p.opacity = Math.min(p.opacity * 1.8, 0.5);
+          }
+        }
+
+        // Wrap around edges
+        if (p.x < -10) p.x = w + 10;
+        if (p.x > w + 10) p.x = -10;
+        if (p.y < -10) p.y = h + 10;
+        if (p.y > h + 10) p.y = -10;
+
+        // Draw — soft radial glow
+        ctx.beginPath();
+        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2.5);
+        gradient.addColorStop(0, `oklch(${p.lightness}% 0.04 ${p.hue} / ${p.opacity})`);
+        gradient.addColorStop(1, `oklch(${p.lightness}% 0.04 ${p.hue} / 0)`);
+        ctx.fillStyle = gradient;
+        ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      animationRef.current = requestAnimationFrame(draw);
+    };
+
+    animationRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(animationRef.current);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", onMouse);
+    };
+  }, [initParticles]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 1 }}
+      aria-hidden="true"
+    />
+  );
+}
 
 /* ─── Motion presets ─── */
 const fadeUp = {
@@ -553,8 +705,9 @@ function Footer() {
 export default function Home() {
   return (
     <>
+      <DreamDust />
       <Nav />
-      <main>
+      <main className="relative" style={{ zIndex: 2 }}>
         <Hero />
         <Story />
         <Features />
