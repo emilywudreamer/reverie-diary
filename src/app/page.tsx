@@ -3,98 +3,78 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 
-/* ─── Floating particles background ─── */
-function DreamParticles() {
-  const particles = Array.from({ length: 40 }, (_, i) => ({
-    id: i,
-    size: Math.random() * 4 + 2,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    duration: Math.random() * 20 + 15,
-    delay: Math.random() * 10,
-    opacity: Math.random() * 0.4 + 0.1,
-  }));
+/* ─── Motion presets ─── */
+const fadeUp = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.3 },
+  transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1] },
+};
 
-  return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full"
-          style={{
-            width: p.size,
-            height: p.size,
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            background: `radial-gradient(circle, rgba(179,146,240,${p.opacity}), transparent)`,
-          }}
-          animate={{
-            y: [0, -60, 0],
-            x: [0, Math.random() * 30 - 15, 0],
-            opacity: [p.opacity, p.opacity * 1.8, p.opacity],
-          }}
-          transition={{
-            duration: p.duration,
-            delay: p.delay,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+const fadeIn = {
+  initial: { opacity: 0 },
+  whileInView: { opacity: 1 },
+  viewport: { once: true, amount: 0.3 },
+  transition: { duration: 1, ease: [0.25, 1, 0.5, 1] },
+};
 
-/* ─── Section wrapper with fade-in ─── */
-function Section({
-  children,
-  className = "",
-  id,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  id?: string;
-}) {
-  return (
-    <motion.section
-      id={id}
-      className={`relative z-10 ${className}`}
-      initial={{ opacity: 0, y: 60 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 1, ease: "easeOut" }}
-    >
-      {children}
-    </motion.section>
-  );
-}
+const stagger = (i: number) => ({
+  ...fadeUp,
+  transition: { ...fadeUp.transition, delay: i * 0.12 },
+});
 
 /* ─── Navigation ─── */
 function Nav() {
   return (
     <motion.nav
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5"
+      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-5"
       style={{
-        background: "linear-gradient(to bottom, rgba(13,10,26,0.95), rgba(13,10,26,0))",
-        backdropFilter: "blur(8px)",
+        background: "oklch(96% 0.01 75 / 0.85)",
+        backdropFilter: "blur(12px)",
       }}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 1, delay: 0.5 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8, delay: 0.3 }}
     >
-      <div className="text-xl tracking-widest" style={{ color: "var(--color-dreamy-lavender)" }}>
-        ✦ REVERIE
-      </div>
-      <div className="hidden md:flex gap-8 text-sm tracking-wider" style={{ color: "var(--color-dreamy-mist)" }}>
-        {["故事", "功能", "记忆回廊", "关于"].map((item, i) => (
-          <motion.a
-            key={item}
-            href={`#section-${i}`}
-            className="hover:opacity-100 opacity-60 transition-opacity cursor-pointer"
-            whileHover={{ y: -2 }}
+      <a
+        href="#"
+        className="text-sm tracking-[0.25em] uppercase"
+        style={{
+          fontFamily: "'Instrument Sans', sans-serif",
+          fontWeight: 500,
+          color: "var(--color-ink-soft)",
+        }}
+      >
+        Reverie
+      </a>
+      <div
+        className="hidden md:flex gap-10 text-sm"
+        style={{
+          fontFamily: "'Instrument Sans', sans-serif",
+          fontWeight: 400,
+          color: "var(--color-ink-faint)",
+        }}
+      >
+        {[
+          { label: "故事", href: "#story" },
+          { label: "功能", href: "#features" },
+          { label: "记忆回廊", href: "#corridor" },
+          { label: "关于", href: "#about" },
+        ].map((item) => (
+          <a
+            key={item.label}
+            href={item.href}
+            className="transition-colors"
+            style={{ transitionDuration: "var(--duration-fast)" }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.color = "var(--color-ink)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "var(--color-ink-faint)")
+            }
           >
-            {item}
-          </motion.a>
+            {item.label}
+          </a>
         ))}
       </div>
     </motion.nav>
@@ -104,295 +84,436 @@ function Nav() {
 /* ─── Hero ─── */
 function Hero() {
   const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.85]);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   return (
-    <motion.div
+    <motion.section
       ref={ref}
-      className="relative min-h-screen flex flex-col items-center justify-center text-center px-6"
-      style={{ opacity, scale }}
+      className="relative min-h-screen flex flex-col justify-end pb-20 md:pb-32 px-6 md:px-16"
+      style={{ opacity }}
     >
-      {/* Radial glow */}
+      {/* Soft radial warmth — not a gradient overlay */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 60% 50% at 50% 40%, rgba(107,92,231,0.15), transparent)",
+            "radial-gradient(ellipse 70% 50% at 30% 60%, oklch(92% 0.03 10 / 0.3), transparent 70%)",
         }}
       />
 
-      <motion.p
-        className="text-sm tracking-[0.5em] uppercase mb-6 relative z-10"
-        style={{ color: "var(--color-dreamy-lavender)" }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.8 }}
-      >
-        A Dream Journal Powered by AI
-      </motion.p>
-
-      <motion.h1
-        className="text-5xl md:text-8xl font-bold leading-tight relative z-10"
-        style={{
-          background: "linear-gradient(135deg, var(--color-soft-white), var(--color-dreamy-lavender))",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-        }}
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, delay: 1 }}
-      >
-        Reverie
-      </motion.h1>
-
-      <motion.h2
-        className="text-2xl md:text-4xl mt-4 relative z-10"
-        style={{ color: "var(--color-dreamy-mist)" }}
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, delay: 1.3 }}
-      >
-        情绪日记本
-      </motion.h2>
-
-      <motion.p
-        className="mt-8 max-w-lg text-lg leading-relaxed relative z-10"
-        style={{ color: "rgba(232,223,245,0.7)" }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.5, delay: 1.8 }}
-      >
-        每张照片背后，都有一个未被讲述的故事。<br />
-        让 AI 倾听你的情绪，编织成梦境般的日记。
-      </motion.p>
-
-      <motion.div
-        className="mt-12 relative z-10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 2.2 }}
-      >
-        <a
-          href="#section-0"
-          className="inline-block px-8 py-3 rounded-full text-sm tracking-widest border transition-all hover:scale-105"
+      <div className="relative max-w-4xl">
+        <motion.p
+          className="text-sm tracking-[0.3em] uppercase mb-6"
           style={{
-            borderColor: "var(--color-dreamy-lavender)",
-            color: "var(--color-dreamy-lavender)",
-            background: "rgba(107,92,231,0.08)",
+            fontFamily: "'Instrument Sans', sans-serif",
+            fontWeight: 500,
+            color: "var(--color-ink-faint)",
           }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.5 }}
         >
-          探索梦境 ↓
-        </a>
-      </motion.div>
+          A Dream Journal
+        </motion.p>
 
-      {/* Scroll indicator */}
+        <motion.h1
+          style={{ color: "var(--color-ink)" }}
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.7, ease: [0.25, 1, 0.5, 1] }}
+        >
+          每张照片背后
+          <br />
+          <span style={{ color: "var(--color-rose)" }}>
+            都有一个
+          </span>
+          <br />
+          未被讲述的故事
+        </motion.h1>
+
+        <motion.p
+          className="mt-8 max-w-md text-lg"
+          style={{ color: "var(--color-ink-soft)", lineHeight: 1.9 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1.2 }}
+        >
+          让 AI 倾听你的情绪，
+          <br />
+          编织成梦境般的日记。
+        </motion.p>
+
+        <motion.a
+          href="#story"
+          className="inline-block mt-12 px-6 py-3 text-sm tracking-wider transition-all"
+          style={{
+            fontFamily: "'Instrument Sans', sans-serif",
+            fontWeight: 500,
+            color: "var(--color-ink)",
+            borderBottom: "1.5px solid var(--color-ink)",
+            transitionDuration: "var(--duration-normal)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--color-rose)";
+            e.currentTarget.style.borderColor = "var(--color-rose)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--color-ink)";
+            e.currentTarget.style.borderColor = "var(--color-ink)";
+          }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.6, ease: [0.25, 1, 0.5, 1] }}
+        >
+          探索 ↓
+        </motion.a>
+      </div>
+
+      {/* Decorative vertical line */}
       <motion.div
-        className="absolute bottom-10"
-        animate={{ y: [0, 12, 0] }}
-        transition={{ duration: 2.5, repeat: Infinity }}
-        style={{ color: "var(--color-dreamy-lavender)", opacity: 0.5 }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M12 5v14M5 12l7 7 7-7" />
-        </svg>
-      </motion.div>
-    </motion.div>
+        className="absolute right-12 top-1/4 hidden md:block"
+        style={{
+          width: "1px",
+          height: "30vh",
+          background:
+            "linear-gradient(to bottom, transparent, var(--color-sand), transparent)",
+        }}
+        initial={{ scaleY: 0 }}
+        animate={{ scaleY: 1 }}
+        transition={{ duration: 1.5, delay: 1, ease: [0.25, 1, 0.5, 1] }}
+      />
+    </motion.section>
   );
 }
 
-/* ─── Feature card data ─── */
+/* ─── Story section — left-aligned editorial ─── */
+function Story() {
+  return (
+    <section
+      id="story"
+      className="py-24 md:py-40 px-6 md:px-16"
+      style={{ background: "var(--color-warm-white)" }}
+    >
+      <div className="max-w-6xl mx-auto grid md:grid-cols-12 gap-8 md:gap-16">
+        {/* Left column — large type */}
+        <motion.div className="md:col-span-5" {...fadeUp}>
+          <p
+            className="text-xs tracking-[0.4em] uppercase mb-4"
+            style={{
+              fontFamily: "'Instrument Sans', sans-serif",
+              fontWeight: 500,
+              color: "var(--color-rose)",
+            }}
+          >
+            Our Story
+          </p>
+          <h2 style={{ color: "var(--color-ink)" }}>
+            照片不只是
+            <em style={{ fontStyle: "italic", color: "var(--color-rose)" }}>
+              像素
+            </em>
+            的排列
+          </h2>
+        </motion.div>
+
+        {/* Right column — body text */}
+        <motion.div
+          className="md:col-span-6 md:col-start-7 flex flex-col justify-center"
+          {...fadeUp}
+          transition={{ ...fadeUp.transition, delay: 0.15 }}
+        >
+          <p style={{ color: "var(--color-ink-soft)" }}>
+            它们是情感的容器，是时间的切片，是你某个下午心跳加速的证据。
+          </p>
+          <p className="mt-6" style={{ color: "var(--color-ink-soft)" }}>
+            Reverie 不会冰冷地分析你的照片。它会坐下来，安静地听你说——
+            那个午后发生了什么，那个微笑意味着什么，那场告别后来怎样了。
+          </p>
+          <p className="mt-6" style={{ color: "var(--color-ink-soft)" }}>
+            然后，它把这些碎片编织成一篇只属于你的日记。
+          </p>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Feature data ─── */
 const features = [
   {
     number: "01",
     title: "上传照片",
     subtitle: "Upload & Recall",
-    description: "将你珍视的瞬间上传至 Reverie。每一张照片，都是一扇通往记忆深处的门。AI 会感知画面中的色彩、光影和情绪氛围。",
-    icon: "📷",
+    description:
+      "将你珍视的瞬间交给 Reverie。AI 会感知画面中的光影、色彩和情绪氛围——不是冷冰冰的识别，而是有温度的感受。",
   },
   {
     number: "02",
-    title: "AI 对话",
-    subtitle: "Converse with AI",
-    description: "与 AI 聊聊照片背后的故事。它不会评判，只会温柔地陪伴你回忆——那个午后、那个微笑、那场未完成的告别。",
-    icon: "💬",
+    title: "对话回忆",
+    subtitle: "Converse",
+    description:
+      "和 AI 聊聊照片背后的故事。它不会评判，只会温柔地陪你回忆。有时候，说出来，就是治愈的开始。",
   },
   {
     number: "03",
-    title: "生成日记",
+    title: "编织日记",
     subtitle: "Dream Weaving",
-    description: "AI 将你的情绪与故事编织成一篇梦境般的日记。文字如月光洒落纸面，轻柔而真实，只属于你。",
-    icon: "✍️",
+    description:
+      "AI 将你的情绪与故事编织成一篇梦境般的日记。文字如月光洒落纸面，轻柔而真实。",
   },
   {
     number: "04",
     title: "记忆回廊",
     subtitle: "Memory Corridor",
-    description: "所有的日记汇聚于此——你的「记忆回廊」。时间在这里变得柔软，随时可以重新走进那些被温柔保管的瞬间。",
-    icon: "🏛️",
+    description:
+      "所有日记汇聚于此。时间在这里变得柔软，随时可以重新走进那些被温柔保管的瞬间。",
   },
 ];
 
-/* ─── Feature section ─── */
+/* ─── Features ─── */
 function Features() {
   return (
-    <div className="py-32 px-6 md:px-20">
-      {features.map((f, i) => (
-        <Section
-          key={f.number}
-          id={`section-${i}`}
-          className="mb-40 max-w-5xl mx-auto"
-        >
-          <div className={`flex flex-col ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"} items-center gap-12 md:gap-20`}>
-            {/* Visual */}
-            <motion.div
-              className="w-64 h-64 md:w-80 md:h-80 rounded-3xl flex items-center justify-center text-7xl shrink-0"
-              style={{
-                background: `linear-gradient(135deg, rgba(107,92,231,0.2), rgba(232,160,180,0.15))`,
-                border: "1px solid rgba(179,146,240,0.15)",
-                boxShadow: "0 0 80px rgba(107,92,231,0.1)",
-              }}
-              whileHover={{ scale: 1.05, rotate: 1 }}
-              transition={{ duration: 0.6 }}
-            >
-              <span>{f.icon}</span>
-            </motion.div>
-
-            {/* Text */}
-            <div className="text-center md:text-left">
-              <p
-                className="text-sm tracking-[0.4em] mb-2"
-                style={{ color: "var(--color-dreamy-lavender)", opacity: 0.6 }}
-              >
-                {f.number} — {f.subtitle}
-              </p>
-              <h3
-                className="text-3xl md:text-5xl font-bold mb-6"
-                style={{
-                  background: "linear-gradient(135deg, var(--color-soft-white), var(--color-dreamy-gold))",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                {f.title}
-              </h3>
-              <p
-                className="text-lg leading-relaxed max-w-md"
-                style={{ color: "rgba(232,223,245,0.7)" }}
-              >
-                {f.description}
-              </p>
-            </div>
-          </div>
-
-          {/* Divider */}
-          {i < features.length - 1 && (
-            <div
-              className="mt-20 mx-auto w-px h-20"
-              style={{
-                background: "linear-gradient(to bottom, var(--color-dreamy-lavender), transparent)",
-                opacity: 0.3,
-              }}
-            />
-          )}
-        </Section>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Memory Corridor showcase ─── */
-function MemoryCorridor() {
-  return (
-    <Section className="py-32 px-6 text-center">
-      <div
-        className="max-w-4xl mx-auto rounded-3xl p-12 md:p-20"
-        style={{
-          background: "linear-gradient(135deg, rgba(107,92,231,0.08), rgba(13,10,26,0.9))",
-          border: "1px solid rgba(179,146,240,0.1)",
-        }}
-      >
+    <section id="features" className="py-24 md:py-40 px-6 md:px-16">
+      <div className="max-w-5xl mx-auto">
         <motion.p
-          className="text-sm tracking-[0.5em] uppercase mb-4"
-          style={{ color: "var(--color-dreamy-lavender)", opacity: 0.6 }}
-        >
-          The Memory Corridor
-        </motion.p>
-        <h2
-          className="text-4xl md:text-6xl font-bold mb-8"
+          className="text-xs tracking-[0.4em] uppercase mb-4"
           style={{
-            background: "linear-gradient(135deg, var(--color-dreamy-mist), var(--color-dreamy-rose))",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
+            fontFamily: "'Instrument Sans', sans-serif",
+            fontWeight: 500,
+            color: "var(--color-rose)",
           }}
+          {...fadeIn}
         >
-          记忆回廊
-        </h2>
-        <p
-          className="text-lg leading-relaxed max-w-2xl mx-auto mb-12"
-          style={{ color: "rgba(232,223,245,0.7)" }}
+          How It Works
+        </motion.p>
+        <motion.h2
+          className="mb-20 md:mb-28"
+          style={{ color: "var(--color-ink)", maxWidth: "16ch" }}
+          {...fadeUp}
         >
-          在这里，时间以另一种方式流动。<br />
-          每一篇日记都是一颗星辰，串联成属于你的银河。<br />
-          轻触任何一颗，便能重返那个梦境。
-        </p>
+          四步，从照片到梦境
+        </motion.h2>
 
-        {/* Mock corridor visualization */}
-        <div className="flex justify-center gap-4 md:gap-6 mt-8">
-          {[0.3, 0.5, 0.7, 1, 0.7, 0.5, 0.3].map((op, i) => (
+        <div className="space-y-20 md:space-y-28">
+          {features.map((f, i) => (
             <motion.div
-              key={i}
-              className="rounded-2xl"
-              style={{
-                width: i === 3 ? 80 : 50,
-                height: i === 3 ? 120 : 80,
-                background: `linear-gradient(to bottom, rgba(179,146,240,${op * 0.4}), rgba(232,160,180,${op * 0.2}))`,
-                border: `1px solid rgba(179,146,240,${op * 0.3})`,
-              }}
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 3, delay: i * 0.3, repeat: Infinity, ease: "easeInOut" }}
-            />
+              key={f.number}
+              className={`grid md:grid-cols-12 gap-6 md:gap-12 items-start ${
+                i % 2 !== 0 ? "md:text-right" : ""
+              }`}
+              {...stagger(i)}
+            >
+              {/* Number — large, decorative */}
+              <div
+                className={`md:col-span-2 ${
+                  i % 2 !== 0 ? "md:col-start-11 md:order-2" : ""
+                }`}
+              >
+                <span
+                  className="text-6xl md:text-7xl font-light"
+                  style={{ color: "var(--color-sand)", lineHeight: 1 }}
+                >
+                  {f.number}
+                </span>
+              </div>
+
+              {/* Content */}
+              <div
+                className={`md:col-span-7 ${
+                  i % 2 !== 0 ? "md:col-start-2 md:order-1" : "md:col-start-4"
+                }`}
+              >
+                <p
+                  className="text-xs tracking-[0.3em] uppercase mb-3"
+                  style={{
+                    fontFamily: "'Instrument Sans', sans-serif",
+                    fontWeight: 400,
+                    color: "var(--color-ink-faint)",
+                  }}
+                >
+                  {f.subtitle}
+                </p>
+                <h3 className="mb-4" style={{ color: "var(--color-ink)" }}>
+                  {f.title}
+                </h3>
+                <p
+                  className="max-w-lg"
+                  style={{
+                    color: "var(--color-ink-soft)",
+                    ...(i % 2 !== 0 ? { marginLeft: "auto" } : {}),
+                  }}
+                >
+                  {f.description}
+                </p>
+
+                {/* Decorative line */}
+                <div
+                  className="mt-8"
+                  style={{
+                    width: "48px",
+                    height: "1px",
+                    background: "var(--color-rose-soft)",
+                    ...(i % 2 !== 0 ? { marginLeft: "auto" } : {}),
+                  }}
+                />
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
-    </Section>
+    </section>
+  );
+}
+
+/* ─── Memory Corridor ─── */
+function MemoryCorridor() {
+  return (
+    <section
+      id="corridor"
+      className="py-24 md:py-40 px-6 md:px-16"
+      style={{ background: "var(--color-parchment)" }}
+    >
+      <div className="max-w-4xl mx-auto">
+        <motion.div className="grid md:grid-cols-12 gap-8" {...fadeUp}>
+          <div className="md:col-span-8">
+            <p
+              className="text-xs tracking-[0.4em] uppercase mb-4"
+              style={{
+                fontFamily: "'Instrument Sans', sans-serif",
+                fontWeight: 500,
+                color: "var(--color-sage)",
+              }}
+            >
+              The Memory Corridor
+            </p>
+            <h2 style={{ color: "var(--color-ink)" }}>记忆回廊</h2>
+            <p
+              className="mt-8"
+              style={{ color: "var(--color-ink-soft)", maxWidth: "50ch" }}
+            >
+              在这里，时间以另一种方式流动。每一篇日记都是一颗星辰，串联成属于你的银河。轻触任何一颗，便能重返那个梦境。
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Corridor visualization — abstracted diary entries */}
+        <motion.div
+          className="mt-16 md:mt-24 grid grid-cols-3 md:grid-cols-5 gap-3 md:gap-4"
+          {...fadeIn}
+          transition={{ ...fadeIn.transition, delay: 0.3 }}
+        >
+          {[
+            { h: "160px", bg: "var(--color-rose-faint)" },
+            { h: "200px", bg: "var(--color-lavender-faint)" },
+            { h: "140px", bg: "var(--color-sage-soft)" },
+            { h: "180px", bg: "var(--color-rose-faint)" },
+            { h: "150px", bg: "var(--color-warm-white)" },
+          ].map((card, i) => (
+            <motion.div
+              key={i}
+              className="rounded-sm"
+              style={{
+                height: card.h,
+                background: card.bg,
+                border: "1px solid oklch(85% 0.01 75 / 0.5)",
+              }}
+              whileHover={{
+                y: -4,
+                transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] },
+              }}
+            >
+              {/* Abstract "text" lines */}
+              <div className="p-4 pt-6 space-y-2">
+                <div
+                  className="rounded-full"
+                  style={{
+                    height: "3px",
+                    width: "60%",
+                    background: "oklch(70% 0.01 75 / 0.2)",
+                  }}
+                />
+                <div
+                  className="rounded-full"
+                  style={{
+                    height: "3px",
+                    width: "80%",
+                    background: "oklch(70% 0.01 75 / 0.15)",
+                  }}
+                />
+                <div
+                  className="rounded-full"
+                  style={{
+                    height: "3px",
+                    width: "45%",
+                    background: "oklch(70% 0.01 75 / 0.1)",
+                  }}
+                />
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
   );
 }
 
 /* ─── About ─── */
 function About() {
   return (
-    <Section id="section-3" className="py-32 px-6 text-center max-w-3xl mx-auto">
-      <p
-        className="text-sm tracking-[0.5em] uppercase mb-4"
-        style={{ color: "var(--color-dreamy-lavender)", opacity: 0.6 }}
-      >
-        About Reverie
-      </p>
-      <h2
-        className="text-4xl md:text-5xl font-bold mb-8"
-        style={{ color: "var(--color-soft-white)" }}
-      >
-        关于 Reverie
-      </h2>
-      <p
-        className="text-lg leading-relaxed"
-        style={{ color: "rgba(232,223,245,0.7)" }}
-      >
-        Reverie 诞生于一个简单的信念：<em>每个人的情绪都值得被记录</em>。
-        我们相信，照片不只是像素的排列，而是情感的容器。
-        通过 AI 的温柔对话，我们帮助你发现照片背后被遗忘的故事，
-        将它们编织成独一无二的日记，存放在专属于你的记忆回廊中。
-      </p>
-      <p
-        className="text-lg leading-relaxed mt-6"
-        style={{ color: "rgba(232,223,245,0.5)" }}
-      >
-        不是冰冷的技术，而是有温度的陪伴。<br />
-        这就是 Reverie。
-      </p>
-    </Section>
+    <section id="about" className="py-24 md:py-40 px-6 md:px-16">
+      <div className="max-w-3xl mx-auto">
+        <motion.div {...fadeUp}>
+          <p
+            className="text-xs tracking-[0.4em] uppercase mb-4"
+            style={{
+              fontFamily: "'Instrument Sans', sans-serif",
+              fontWeight: 500,
+              color: "var(--color-rose)",
+            }}
+          >
+            About
+          </p>
+          <h2 className="mb-10" style={{ color: "var(--color-ink)" }}>
+            关于 Reverie
+          </h2>
+        </motion.div>
+
+        <motion.div
+          className="space-y-6"
+          {...fadeUp}
+          transition={{ ...fadeUp.transition, delay: 0.15 }}
+        >
+          <p style={{ color: "var(--color-ink-soft)" }}>
+            Reverie 诞生于一个简单的信念：
+            <em style={{ fontStyle: "italic", color: "var(--color-ink)" }}>
+              每个人的情绪都值得被记录。
+            </em>
+          </p>
+          <p style={{ color: "var(--color-ink-soft)" }}>
+            我们相信照片不只是像素的排列，而是情感的容器。通过 AI
+            的温柔对话，我们帮助你发现照片背后被遗忘的故事，将它们编织成独一无二的日记，存放在专属于你的记忆回廊中。
+          </p>
+          <p style={{ color: "var(--color-ink-faint)" }}>
+            不是冰冷的技术，而是有温度的陪伴。
+          </p>
+        </motion.div>
+
+        {/* Decorative divider */}
+        <motion.div
+          className="mt-16"
+          style={{
+            width: "32px",
+            height: "1px",
+            background: "var(--color-sand)",
+          }}
+          {...fadeIn}
+        />
+      </div>
+    </section>
   );
 }
 
@@ -400,29 +521,46 @@ function About() {
 function Footer() {
   return (
     <footer
-      className="relative z-10 py-16 px-6 text-center"
-      style={{ borderTop: "1px solid rgba(179,146,240,0.08)" }}
+      className="py-16 px-6 md:px-16"
+      style={{
+        borderTop: "1px solid var(--color-sand)",
+        background: "var(--color-cream)",
+      }}
     >
-      <p className="text-sm tracking-widest" style={{ color: "var(--color-dreamy-lavender)", opacity: 0.5 }}>
-        ✦ REVERIE DIARY
-      </p>
-      <p className="mt-4 text-xs" style={{ color: "rgba(232,223,245,0.3)" }}>
-        © 2026 Reverie. All dreams reserved.
-      </p>
+      <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <p
+          className="text-sm tracking-[0.2em]"
+          style={{
+            fontFamily: "'Instrument Sans', sans-serif",
+            fontWeight: 400,
+            color: "var(--color-ink-faint)",
+          }}
+        >
+          Reverie Diary
+        </p>
+        <p
+          className="text-xs"
+          style={{ color: "var(--color-ink-faint)", opacity: 0.6 }}
+        >
+          © 2026 Reverie. All dreams reserved.
+        </p>
+      </div>
     </footer>
   );
 }
 
-/* ─── Main page ─── */
+/* ─── Page ─── */
 export default function Home() {
   return (
     <>
-      <DreamParticles />
       <Nav />
-      <Hero />
-      <Features />
-      <MemoryCorridor />
-      <About />
+      <main>
+        <Hero />
+        <Story />
+        <Features />
+        <MemoryCorridor />
+        <About />
+      </main>
       <Footer />
     </>
   );
