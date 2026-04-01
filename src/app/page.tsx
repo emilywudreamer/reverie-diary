@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef, useEffect, useCallback } from "react";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { useRef, useEffect, useCallback, useState } from "react";
 
 /* ─── Star Dust — canvas particle system ─── */
 function StarDust() {
@@ -195,60 +195,170 @@ const stagger = (i: number) => ({
 });
 
 /* ─── Navigation ─── */
+const navLinks = [
+  { label: "故事", href: "#story" },
+  { label: "功能", href: "#features" },
+  { label: "记忆回廊", href: "#corridor" },
+  { label: "关于", href: "#about" },
+];
+
 function Nav() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Lock body scroll when menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
-    <motion.nav
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-5"
-      style={{
-        background: "oklch(12% 0.015 270 / 0.8)",
-        backdropFilter: "blur(12px)",
-      }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8, delay: 0.3 }}
-    >
-      <a
-        href="#"
-        className="text-sm tracking-[0.25em] uppercase"
+    <>
+      <motion.nav
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-5"
         style={{
-          fontFamily: "'Instrument Sans', sans-serif",
-          fontWeight: 500,
-          color: "var(--color-star-soft)",
+          background: "oklch(12% 0.015 270 / 0.8)",
+          backdropFilter: "blur(12px)",
         }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.3 }}
       >
-        Reverie
-      </a>
-      <div
-        className="hidden md:flex gap-10 text-sm"
-        style={{
-          fontFamily: "'Instrument Sans', sans-serif",
-          fontWeight: 400,
-          color: "var(--color-moon-faint)",
-        }}
-      >
-        {[
-          { label: "故事", href: "#story" },
-          { label: "功能", href: "#features" },
-          { label: "记忆回廊", href: "#corridor" },
-          { label: "关于", href: "#about" },
-        ].map((item) => (
-          <a
-            key={item.label}
-            href={item.href}
-            className="transition-colors"
-            style={{ transitionDuration: "var(--duration-fast)" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.color = "var(--color-moon)")
+        <a
+          href="#"
+          className="text-sm tracking-[0.25em] uppercase relative z-50"
+          style={{
+            fontFamily: "'Instrument Sans', sans-serif",
+            fontWeight: 500,
+            color: "var(--color-star-soft)",
+          }}
+        >
+          Reverie
+        </a>
+
+        {/* Desktop links */}
+        <div
+          className="hidden md:flex gap-10 text-sm"
+          style={{
+            fontFamily: "'Instrument Sans', sans-serif",
+            fontWeight: 400,
+            color: "var(--color-moon-faint)",
+          }}
+        >
+          {navLinks.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className="transition-colors"
+              style={{ transitionDuration: "var(--duration-fast)" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--color-moon)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--color-moon-faint)")
+              }
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+
+        {/* Mobile hamburger button */}
+        <button
+          className="md:hidden relative z-50 w-8 h-8 flex flex-col items-center justify-center gap-[7px]"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label={isOpen ? "关闭菜单" : "打开菜单"}
+          aria-expanded={isOpen}
+        >
+          <motion.span
+            className="block w-5 h-[1.5px] rounded-full"
+            style={{ background: "var(--color-star-soft)", transformOrigin: "center" }}
+            animate={
+              isOpen
+                ? { rotate: 45, y: 4.25 }
+                : { rotate: 0, y: 0 }
             }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = "var(--color-moon-faint)")
+            transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+          />
+          <motion.span
+            className="block w-5 h-[1.5px] rounded-full"
+            style={{ background: "var(--color-star-soft)", transformOrigin: "center" }}
+            animate={
+              isOpen
+                ? { rotate: -45, y: -4.25 }
+                : { rotate: 0, y: 0 }
             }
+            transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+          />
+        </button>
+      </motion.nav>
+
+      {/* Mobile fullscreen overlay menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="fixed inset-0 z-40 flex flex-col items-center justify-center md:hidden"
+            style={{ background: "oklch(12% 0.015 270 / 0.95)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
           >
-            {item.label}
-          </a>
-        ))}
-      </div>
-    </motion.nav>
+            <nav className="flex flex-col items-center gap-10">
+              {navLinks.map((item, i) => (
+                <motion.a
+                  key={item.label}
+                  href={item.href}
+                  className="text-2xl tracking-[0.15em]"
+                  style={{
+                    fontFamily: "'Instrument Sans', sans-serif",
+                    fontWeight: 400,
+                    color: "var(--color-moon-soft)",
+                    transitionProperty: "color",
+                    transitionDuration: "var(--duration-fast)",
+                  }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{
+                    duration: 0.4,
+                    delay: i * 0.08,
+                    ease: [0.25, 1, 0.5, 1],
+                  }}
+                  onClick={() => setIsOpen(false)}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = "var(--color-star)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "var(--color-moon-soft)")
+                  }
+                >
+                  {item.label}
+                </motion.a>
+              ))}
+            </nav>
+
+            {/* Decorative line at bottom */}
+            <motion.div
+              className="absolute bottom-16"
+              style={{
+                width: "32px",
+                height: "1px",
+                background: "var(--color-star-faint)",
+              }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.6, delay: 0.3, ease: [0.25, 1, 0.5, 1] }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
